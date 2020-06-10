@@ -1,17 +1,20 @@
-FROM ruby:2.5.1
+FROM ruby:2.6-slim
 
-RUN apt-get update && apt-get install -y nodejs \
-&& apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR /srv/slate
 
-COPY ./Gemfile /usr/src/app/
-COPY ./Gemfile.lock /usr/src/app/
-WORKDIR /usr/src/app
-
-RUN bundle install
-
-COPY . /usr/src/app
-VOLUME /usr/src/app/source
-
+VOLUME /srv/slate/source
 EXPOSE 4567
+
+COPY . /srv/slate
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        nodejs \
+    && gem install bundler \
+    && bundle install \
+    && apt-get remove -y build-essential \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 CMD ["bundle", "exec", "middleman", "server", "--watcher-force-polling"]
